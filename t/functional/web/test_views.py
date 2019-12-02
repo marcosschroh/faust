@@ -46,7 +46,9 @@ def inject_blueprint(app):
 async def test_takes_model(*, inject_blueprint, web_client, app):
     client = await web_client
     obj = XModel(aint=30, astr='hello')
-    resp = await client.post('/test/takes/', data=obj.dumps(serializer='json'))
+    data = await obj.dumps(serializer='json')
+    resp = await client.post(
+        '/test/takes/', data=data)
     assert resp.status == 200
     payload = await resp.json()
     assert XModel.from_data(payload) == obj

@@ -78,15 +78,15 @@ async def test_send(
             # (note that a bytes key will be left alone.
             key_serializer = 'raw'
         if isinstance(key, ModelT):
-            expected_key = key.dumps(serializer='raw')
+            expected_key = await key.dumps(serializer='raw')
         elif key_serializer:
-            expected_key = codecs.dumps(key_serializer, key)
+            expected_key = await codecs.dumps(key_serializer, key)
         else:
             expected_key = want_bytes(key)
     else:
         expected_key = None
     expected_sender.assert_called_with(
-        expected_topic, expected_key, event.dumps(),
+        expected_topic, expected_key, await event.dumps(),
         partition=None,
         timestamp=None,
         headers={},

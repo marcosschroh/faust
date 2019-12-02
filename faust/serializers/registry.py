@@ -32,11 +32,13 @@ class Registry(RegistryT):
         self.key_serializer = key_serializer
         self.value_serializer = value_serializer
 
-    def loads_key(self,
-                  typ: Optional[ModelArg],
-                  key: Optional[bytes],
-                  *,
-                  serializer: CodecArg = None) -> K:
+    async def loads_key(
+        self,
+        typ: Optional[ModelArg],
+        key: Optional[bytes],
+        *,
+        serializer: CodecArg = None
+    ) -> K:
         """Deserialize message key.
 
         Arguments:
@@ -52,7 +54,7 @@ class Registry(RegistryT):
             return key
         serializer = serializer or self.key_serializer
         try:
-            payload = self._loads(serializer, key)
+            payload = await self._loads(serializer, key)
             return cast(K, self._prepare_payload(typ, payload))
         except MemoryError:
             raise
@@ -60,8 +62,8 @@ class Registry(RegistryT):
             raise KeyDecodeError(str(exc)).with_traceback(
                 sys.exc_info()[2]) from exc
 
-    def _loads(self, serializer: CodecArg, data: bytes) -> Any:
-        return loads(serializer, data)
+    async def _loads(self, serializer: CodecArg, data: bytes) -> Any:
+        return await loads(serializer, data)
 
     def _serializer(self, typ: Optional[ModelArg], *alt: CodecArg) -> CodecArg:
         serializer = None
@@ -75,7 +77,7 @@ class Registry(RegistryT):
                 return 'raw'
         return serializer
 
-    def loads_value(self,
+    async def loads_value(self,
                     typ: Optional[ModelArg],
                     value: Optional[bytes],
                     *,
@@ -96,7 +98,7 @@ class Registry(RegistryT):
             return None
         serializer = self._serializer(typ, serializer, self.value_serializer)
         try:
-            payload = self._loads(serializer, value)
+            payload = await self._loads(serializer, value)
             return cast(V, self._prepare_payload(typ, payload))
         except MemoryError:
             raise
@@ -122,12 +124,14 @@ class Registry(RegistryT):
             model = cast(ModelT, typ)
             return model.from_data(value, preferred_type=model)
 
-    def dumps_key(self,
-                  typ: Optional[ModelArg],
-                  key: K,
-                  *,
-                  serializer: CodecArg = None,
-                  skip: IsInstanceArg = (bytes,)) -> Optional[bytes]:
+    async def dumps_key(
+        self,
+        typ: Optional[ModelArg],
+        key: K,
+        *,
+        serializer: CodecArg = None,
+        skip: IsInstanceArg = (bytes,)
+    ) -> Optional[bytes]:
         """Serialize key.
 
         Arguments:
@@ -145,16 +149,18 @@ class Registry(RegistryT):
         serializer = self._serializer(typ, serializer, self.key_serializer)
         if serializer and not isinstance(key, skip):
             if is_model:
-                return cast(ModelT, key).dumps(serializer=serializer)
-            return dumps(serializer, key)
+                return await cast(ModelT, key).dumps(serializer=serializer)
+            return await dumps(serializer, key)
         return want_bytes(cast(bytes, key)) if key is not None else None
 
-    def dumps_value(self,
-                    typ: Optional[ModelArg],
-                    value: V,
-                    *,
-                    serializer: CodecArg = None,
-                    skip: IsInstanceArg = (bytes,)) -> Optional[bytes]:
+    async def dumps_value(
+        self,
+        typ: Optional[ModelArg],
+        value: V,
+        *,
+        serializer: CodecArg = None,
+        skip: IsInstanceArg = (bytes,)
+    ) -> Optional[bytes]:
         """Serialize value.
 
         Arguments:
@@ -172,8 +178,8 @@ class Registry(RegistryT):
         serializer = self._serializer(typ, serializer, self.value_serializer)
         if serializer and not isinstance(value, skip):
             if is_model:
-                return cast(ModelT, value).dumps(serializer=serializer)
-            return dumps(serializer, value)
+                return await cast(ModelT, value).dumps(serializer=serializer)
+            return await dumps(serializer, value)
         return cast(bytes, value)
 
     @cached_property

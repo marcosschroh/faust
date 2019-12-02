@@ -214,9 +214,11 @@ class Model(ModelT):
         return model.from_data(data) if model else data
 
     @classmethod
-    def loads(cls, s: bytes, *,
-              default_serializer: CodecArg = None,  # XXX use serializer
-              serializer: CodecArg = None) -> ModelT:
+    async def loads(
+        cls, s: bytes, *,
+        default_serializer: CodecArg = None,  # XXX use serializer
+        serializer: CodecArg = None
+    ) -> ModelT:
         """Deserialize model object from bytes.
 
         Keyword Arguments:
@@ -227,7 +229,7 @@ class Model(ModelT):
             warnings.warn(DeprecationWarning(
                 'default_serializer deprecated, use: serializer'))
         ser = cls._options.serializer or serializer or default_serializer
-        data = loads(ser, s)
+        data = await loads(ser, s)
         return cls.from_data(data)
 
     def __init_subclass__(cls,
@@ -459,10 +461,12 @@ class Model(ModelT):
     def _derive(self, *objects: ModelT, **fields: Any) -> ModelT:
         raise NotImplementedError()
 
-    def dumps(self, *, serializer: CodecArg = None) -> bytes:
+    async def dumps(self, *, serializer: CodecArg = None) -> bytes:
         """Serialize object to the target serialization format."""
-        return dumps(serializer or self._options.serializer,
-                     self.to_representation())
+        return await dumps(
+            serializer or self._options.serializer,
+            self.to_representation()
+        )
 
     def __repr__(self) -> str:
         return f'<{type(self).__name__}: {self._humanize()}>'

@@ -87,7 +87,8 @@ def test_parameters():
         account2.foo
 
 
-def test_paramters_with_custom_init():
+@pytest.mark.asyncio
+async def test_paramters_with_custom_init():
 
     class Point(Record, include_metadata=False):
         x: int
@@ -101,7 +102,7 @@ def test_paramters_with_custom_init():
     assert p.x == 30
     assert p.y == 10
 
-    payload = p.dumps(serializer='json')
+    payload = await p.dumps(serializer='json')
     assert payload == b'{"x": 30, "y": 10}'
 
     data = json.loads(payload)
@@ -110,7 +111,8 @@ def test_paramters_with_custom_init():
     assert p2.y == 10
 
 
-def test_parameters_with_custom_init_and_super():
+@pytest.mark.asyncio
+async def test_parameters_with_custom_init_and_super():
 
     class Point(Record, include_metadata=False):
         x: int
@@ -124,7 +126,7 @@ def test_parameters_with_custom_init_and_super():
     assert p.y == 10
     assert p.z == 40
 
-    payload = p.dumps(serializer='json')
+    payload = await p.dumps(serializer='json')
     assert payload == b'{"x": 30, "y": 10}'
 
     data = json.loads(payload)
@@ -134,7 +136,8 @@ def test_parameters_with_custom_init_and_super():
     assert p2.z == 40
 
 
-def test_datetimes():
+@pytest.mark.asyncio
+async def test_datetimes():
 
     class Date(Record, coerce=True):
         date: datetime
@@ -161,35 +164,72 @@ def test_datetimes():
         dates: Optional[List[datetime]]
 
     n1 = datetime.utcnow()
-    assert Date.loads(Date(date=n1).dumps()).date == n1
-    assert OptionalDate.loads(OptionalDate(date=n1).dumps()).date == n1
-    assert OptionalDate.loads(OptionalDate(date=None).dumps()).date is None
+    result = await Date.loads(
+        await Date(date=n1).dumps()
+    )
+    assert result.date == n1
+
+    result = await OptionalDate.loads(
+        await OptionalDate(date=n1).dumps()
+    )
+    assert result.date == n1
+
+    result = await OptionalDate.loads(await OptionalDate(date=None).dumps())
+    assert result.date is None
+
     n2 = datetime.utcnow()
-    assert ListOfDate.loads(ListOfDate(
-        dates=[n1, n2]).dumps()).dates == [n1, n2]
-    assert OptionalListOfDate.loads(OptionalListOfDate(
-        dates=None).dumps()).dates is None
-    assert OptionalListOfDate.loads(OptionalListOfDate(
-        dates=[n2, n1]).dumps()).dates == [n2, n1]
-    assert OptionalListOfDate2.loads(OptionalListOfDate2(
-        dates=None).dumps()).dates is None
-    assert OptionalListOfDate2.loads(OptionalListOfDate2(
-        dates=[n1, n2]).dumps()).dates == [n1, n2]
-    assert TupleOfDate.loads(TupleOfDate(
-        dates=(n1, n2)).dumps()).dates == (n1, n2)
-    assert TupleOfDate.loads(TupleOfDate(
-        dates=(n2,)).dumps()).dates == (n2,)
-    assert SetOfDate.loads(SetOfDate(
-        dates={n1, n2}).dumps()).dates == {n1, n2}
-    assert MapOfDate.loads(MapOfDate(
-        dates={'A': n1, 'B': n2}).dumps()).dates == {'A': n1, 'B': n2}
+    result = await ListOfDate.loads(
+        await ListOfDate(dates=[n1, n2]).dumps()
+    )
+    assert result.dates == [n1, n2]
+
+    result = await OptionalListOfDate.loads(
+        await OptionalListOfDate(dates=None).dumps()
+    )
+    assert result.dates is None
+
+    result = await OptionalListOfDate.loads(
+        await OptionalListOfDate(dates=[n2, n1]).dumps()
+    )
+    assert result.dates == [n2, n1]
+
+    result = await OptionalListOfDate2.loads(
+        await OptionalListOfDate2(dates=None).dumps()
+    )
+    assert result.dates is None
+
+    result = await OptionalListOfDate2.loads(
+        await OptionalListOfDate2(dates=[n1, n2]).dumps()
+    )
+    assert result.dates == [n1, n2]
+
+    result = await TupleOfDate.loads(
+        await TupleOfDate(dates=(n1, n2)).dumps()
+    )
+    assert result.dates == (n1, n2)
+
+    result = await TupleOfDate.loads(
+        await TupleOfDate(dates=(n2,)).dumps()
+    )
+    assert result.dates == (n2,)
+
+    result = await SetOfDate.loads(
+        await SetOfDate(dates={n1, n2}).dumps()
+    )
+    assert result.dates == {n1, n2}
+
+    result = await MapOfDate.loads(
+        await MapOfDate(dates={'A': n1, 'B': n2}).dumps()
+    )
+    assert result.dates == {'A': n1, 'B': n2}
 
     datelist = ListOfDate(dates=[n1.isoformat(), n2.isoformat()])
     assert isinstance(datelist.dates[0], datetime)
     assert isinstance(datelist.dates[1], datetime)
 
 
-def test_datetimes__isodates_compat():
+@pytest.mark.asyncio
+async def test_datetimes__isodates_compat():
 
     class Date(Record, coerce=False, isodates=True):
         date: datetime
@@ -213,33 +253,63 @@ def test_datetimes__isodates_compat():
         dates: Optional[List[datetime]]
 
     n1 = datetime.utcnow()
-    assert Date.loads(Date(date=n1).dumps()).date == n1
+    result = await Date.loads(
+        await Date(date=n1).dumps()
+    )
+    assert result.date == n1
+
     n2 = datetime.utcnow()
-    assert ListOfDate.loads(ListOfDate(
-        dates=[n1, n2]).dumps()).dates == [n1, n2]
-    assert OptionalListOfDate.loads(OptionalListOfDate(
-        dates=None).dumps()).dates is None
-    assert OptionalListOfDate.loads(OptionalListOfDate(
-        dates=[n2, n1]).dumps()).dates == [n2, n1]
-    assert OptionalListOfDate2.loads(OptionalListOfDate2(
-        dates=None).dumps()).dates is None
-    assert OptionalListOfDate2.loads(OptionalListOfDate2(
-        dates=[n1, n2]).dumps()).dates == [n1, n2]
-    assert TupleOfDate.loads(TupleOfDate(
-        dates=(n1, n2)).dumps()).dates == (n1, n2)
-    assert TupleOfDate.loads(TupleOfDate(
-        dates=(n2,)).dumps()).dates == (n2,)
-    assert SetOfDate.loads(SetOfDate(
-        dates={n1, n2}).dumps()).dates == {n1, n2}
-    assert MapOfDate.loads(MapOfDate(
-        dates={'A': n1, 'B': n2}).dumps()).dates == {'A': n1, 'B': n2}
+
+    result = await ListOfDate.loads(
+        await ListOfDate(dates=[n1, n2]).dumps()
+    )
+    assert result.dates == [n1, n2]
+
+    result = await OptionalListOfDate.loads(
+        await OptionalListOfDate(dates=None).dumps()
+    )
+    assert result.dates is None
+
+    result = await OptionalListOfDate.loads(
+        await OptionalListOfDate(dates=[n2, n1]).dumps())
+    assert result.dates == [n2, n1]
+
+    result = await OptionalListOfDate2.loads(
+        await OptionalListOfDate2(dates=None).dumps())
+    assert result.dates is None
+
+    result = await OptionalListOfDate2.loads(
+        await OptionalListOfDate2(dates=[n1, n2]).dumps()
+    )
+    assert result.dates == [n1, n2]
+
+    result = await TupleOfDate.loads(
+        await TupleOfDate(dates=(n1, n2)).dumps()
+    )
+    assert result.dates == (n1, n2)
+
+    result = await TupleOfDate.loads(
+        await TupleOfDate(dates=(n2,)).dumps()
+    )
+    assert result.dates == (n2,)
+
+    result = await SetOfDate.loads(
+        await SetOfDate(dates={n1, n2}).dumps()
+    )
+    assert result.dates == {n1, n2}
+
+    result = await MapOfDate.loads(
+        await MapOfDate(dates={'A': n1, 'B': n2}).dumps()
+    )
+    assert result.dates == {'A': n1, 'B': n2}
 
     datelist = ListOfDate(dates=[n1.isoformat(), n2.isoformat()])
     assert isinstance(datelist.dates[0], datetime)
     assert isinstance(datelist.dates[1], datetime)
 
 
-def test_decimals():
+@pytest.mark.asyncio
+async def test_decimals():
 
     class IsDecimal(Record, coerce=True, serializer='json'):
         number: Decimal
@@ -263,33 +333,62 @@ def test_decimals():
         numbers: Mapping[str, Decimal]
 
     n1 = Decimal('1.31341324')
-    assert IsDecimal.loads(IsDecimal(number=n1).dumps()).number == n1
+    result = await IsDecimal.loads(await IsDecimal(number=n1).dumps())
+    assert result.number == n1
+
     n2 = Decimal('3.41569')
-    assert ListOfDecimal.loads(ListOfDecimal(
-        numbers=[n1, n2]).dumps()).numbers == [n1, n2]
-    assert OptionalListOfDecimal.loads(OptionalListOfDecimal(
-        numbers=None).dumps()).numbers is None
-    assert OptionalListOfDecimal.loads(OptionalListOfDecimal(
-        numbers=[n2, n1]).dumps()).numbers == [n2, n1]
-    assert OptionalListOfDecimal2.loads(OptionalListOfDecimal2(
-        numbers=None).dumps()).numbers is None
-    assert OptionalListOfDecimal2.loads(OptionalListOfDecimal2(
-        numbers=[n1, n2]).dumps()).numbers == [n1, n2]
-    assert TupleOfDecimal.loads(TupleOfDecimal(
-        numbers=(n1, n2)).dumps()).numbers == (n1, n2)
-    assert TupleOfDecimal.loads(TupleOfDecimal(
-        numbers=(n2,)).dumps()).numbers == (n2,)
-    assert SetOfDecimal.loads(SetOfDecimal(
-        numbers={n1, n2}).dumps()).numbers == {n1, n2}
-    assert MapOfDecimal.loads(MapOfDecimal(
-        numbers={'A': n1, 'B': n2}).dumps()).numbers == {'A': n1, 'B': n2}
+    result = await ListOfDecimal.loads(
+        await ListOfDecimal(numbers=[n1, n2]).dumps()
+    )
+    assert result.numbers == [n1, n2]
+
+    result = await OptionalListOfDecimal.loads(
+        await OptionalListOfDecimal(numbers=None).dumps()
+    )
+    assert result.numbers is None
+
+    result = await OptionalListOfDecimal.loads(
+        await OptionalListOfDecimal(numbers=[n2, n1]).dumps()
+    )
+    assert result.numbers == [n2, n1]
+
+    result = await OptionalListOfDecimal2.loads(
+        await OptionalListOfDecimal2(numbers=None).dumps()
+    )
+    assert result.numbers is None
+
+    result = await OptionalListOfDecimal2.loads(
+        await OptionalListOfDecimal2(numbers=[n1, n2]).dumps()
+    )
+    assert result.numbers == [n1, n2]
+
+    result = await TupleOfDecimal.loads(
+        await TupleOfDecimal(numbers=(n1, n2)).dumps()
+    )
+    assert result.numbers == (n1, n2)
+
+    result = await TupleOfDecimal.loads(
+        await TupleOfDecimal(numbers=(n2,)).dumps()
+    )
+    assert result.numbers == (n2,)
+
+    result = await SetOfDecimal.loads(
+        await SetOfDecimal(numbers={n1, n2}).dumps()
+    )
+    assert result.numbers == {n1, n2}
+
+    result = await MapOfDecimal.loads(
+        await MapOfDecimal(numbers={'A': n1, 'B': n2}).dumps()
+    )
+    assert result.numbers == {'A': n1, 'B': n2}
 
     dlist = ListOfDecimal(numbers=['1.312341', '3.41569'])
     assert isinstance(dlist.numbers[0], Decimal)
     assert isinstance(dlist.numbers[1], Decimal)
 
 
-def test_decimals_compat():
+@pytest.mark.asyncio
+async def test_decimals_compat():
 
     class IsDecimal(Record, coerce=False, decimals=True, serializer='json'):
         number: Decimal
@@ -331,33 +430,64 @@ def test_decimals_compat():
         numbers: Mapping[str, Decimal]
 
     n1 = Decimal('1.31341324')
-    assert IsDecimal.loads(IsDecimal(number=n1).dumps()).number == n1
+    retult = await IsDecimal.loads(
+        await IsDecimal(number=n1).dumps()
+    )
+    assert retult.number == n1
+
     n2 = Decimal('3.41569')
-    assert ListOfDecimal.loads(ListOfDecimal(
-        numbers=[n1, n2]).dumps()).numbers == [n1, n2]
-    assert OptionalListOfDecimal.loads(OptionalListOfDecimal(
-        numbers=None).dumps()).numbers is None
-    assert OptionalListOfDecimal.loads(OptionalListOfDecimal(
-        numbers=[n2, n1]).dumps()).numbers == [n2, n1]
-    assert OptionalListOfDecimal2.loads(OptionalListOfDecimal2(
-        numbers=None).dumps()).numbers is None
-    assert OptionalListOfDecimal2.loads(OptionalListOfDecimal2(
-        numbers=[n1, n2]).dumps()).numbers == [n1, n2]
-    assert TupleOfDecimal.loads(TupleOfDecimal(
-        numbers=(n1, n2)).dumps()).numbers == (n1, n2)
-    assert TupleOfDecimal.loads(TupleOfDecimal(
-        numbers=(n2,)).dumps()).numbers == (n2,)
-    assert SetOfDecimal.loads(SetOfDecimal(
-        numbers={n1, n2}).dumps()).numbers == {n1, n2}
-    assert MapOfDecimal.loads(MapOfDecimal(
-        numbers={'A': n1, 'B': n2}).dumps()).numbers == {'A': n1, 'B': n2}
+    result = await ListOfDecimal.loads(
+        await ListOfDecimal(numbers=[n1, n2]).dumps()
+    )
+    assert result.numbers == [n1, n2]
+
+    result = await OptionalListOfDecimal.loads(
+        await OptionalListOfDecimal(numbers=None).dumps()
+    )
+    assert result.numbers is None
+
+    result = await OptionalListOfDecimal.loads(
+        await OptionalListOfDecimal(numbers=[n2, n1]).dumps()
+    )
+    assert result.numbers == [n2, n1]
+
+    result = await OptionalListOfDecimal2.loads(
+        await OptionalListOfDecimal2(numbers=None).dumps()
+    )
+    assert result.numbers is None
+
+    result = await OptionalListOfDecimal2.loads(
+        await OptionalListOfDecimal2(numbers=[n1, n2]).dumps()
+    )
+    assert result.numbers == [n1, n2]
+
+    result = await TupleOfDecimal.loads(
+        await TupleOfDecimal(numbers=(n1, n2)).dumps()
+    )
+    assert result.numbers == (n1, n2)
+
+    result = await TupleOfDecimal.loads(
+        await TupleOfDecimal(numbers=(n2,)).dumps()
+    )
+    assert result.numbers == (n2,)
+
+    result = await SetOfDecimal.loads(
+        await SetOfDecimal(numbers={n1, n2}).dumps()
+    )
+    assert result.numbers == {n1, n2}
+
+    result = await MapOfDecimal.loads(
+        await MapOfDecimal(numbers={'A': n1, 'B': n2}).dumps()
+    )
+    assert result.numbers == {'A': n1, 'B': n2}
 
     dlist = ListOfDecimal(numbers=['1.312341', '3.41569'])
     assert isinstance(dlist.numbers[0], Decimal)
     assert isinstance(dlist.numbers[1], Decimal)
 
 
-def test_custom_coercion():
+@pytest.mark.asyncio
+async def test_custom_coercion():
 
     class Foo:
 
@@ -404,26 +534,56 @@ def test_custom_coercion():
         foos: Mapping[str, Foo]
 
     n1 = Foo(101)
-    assert IsFoo.loads(IsFoo(foo=n1).dumps()).foo == n1
+    result = await IsFoo.loads(
+        await IsFoo(foo=n1).dumps()
+    )
+    assert result.foo == n1
+
     n2 = Foo(202)
-    assert ListOfFoo.loads(ListOfFoo(
-        foos=[n1, n2]).dumps()).foos == [n1, n2]
-    assert OptionalListOfFoo.loads(OptionalListOfFoo(
-        foos=None).dumps()).foos is None
-    assert OptionalListOfFoo.loads(OptionalListOfFoo(
-        foos=[n2, n1]).dumps()).foos == [n2, n1]
-    assert OptionalListOfFoo2.loads(OptionalListOfFoo2(
-        foos=None).dumps()).foos is None
-    assert OptionalListOfFoo2.loads(OptionalListOfFoo2(
-        foos=[n1, n2]).dumps()).foos == [n1, n2]
-    assert TupleOfFoo.loads(TupleOfFoo(
-        foos=(n1, n2)).dumps()).foos == (n1, n2)
-    assert TupleOfFoo.loads(TupleOfFoo(
-        foos=(n2,)).dumps()).foos == (n2,)
-    assert SetOfFoo.loads(SetOfFoo(
-        foos={n1, n2}).dumps()).foos == {n1, n2}
-    assert MapOfFoo.loads(MapOfFoo(
-        foos={'A': n1, 'B': n2}).dumps()).foos == {'A': n1, 'B': n2}
+    result = await ListOfFoo.loads(
+        await ListOfFoo(foos=[n1, n2]).dumps()
+    )
+    assert result.foos == [n1, n2]
+
+    result = await OptionalListOfFoo.loads(
+        await OptionalListOfFoo(foos=None).dumps()
+    )
+    assert result.foos is None
+
+    result = await OptionalListOfFoo.loads(
+        await OptionalListOfFoo(foos=[n2, n1]).dumps()
+    )
+    assert result.foos == [n2, n1]
+
+    result = await OptionalListOfFoo2.loads(
+        await OptionalListOfFoo2(foos=None).dumps()
+    )
+    assert result.foos is None
+
+    result = await OptionalListOfFoo2.loads(
+        await OptionalListOfFoo2(foos=[n1, n2]).dumps()
+    )
+    assert result.foos == [n1, n2]
+
+    result = await TupleOfFoo.loads(
+        await TupleOfFoo(foos=(n1, n2)).dumps()
+    )
+    assert result.foos == (n1, n2)
+
+    result = await TupleOfFoo.loads(
+        await TupleOfFoo(foos=(n2,)).dumps()
+    )
+    assert result.foos == (n2,)
+
+    result = await SetOfFoo.loads(
+        await SetOfFoo(foos={n1, n2}).dumps()
+    )
+    assert result.foos == {n1, n2}
+
+    result = await MapOfFoo.loads(
+        await MapOfFoo(foos={'A': n1, 'B': n2}).dumps()
+    )
+    assert result.foos == {'A': n1, 'B': n2}
 
 
 def test_constructor():
@@ -440,39 +600,58 @@ def test_constructor():
     assert not Account(id='123', name='foo', active=False).active
 
 
-def test_submodels():
+@pytest.mark.asyncio
+async def test_submodels():
     a1 = Account(id='123', name='foo', active=True)
     a2 = Account(id='456', name='bar', active=False)
     a3 = Account(id='789', name='baz', active=True)
 
-    assert AccountList.loads(AccountList(
-        accounts=[a1, a2, a3]).dumps()).accounts == [a1, a2, a3]
+    result = await AccountList.loads(
+        await AccountList(accounts=[a1, a2, a3]).dumps()
+    )
+    assert result.accounts == [a1, a2, a3]
 
     expected_set = {a1, a2, a3}
-    acc1 = AccountSet.loads(AccountSet(accounts={a1, a2, a3}).dumps()).accounts
+    result = await AccountSet.loads(
+        await AccountSet(accounts={a1, a2, a3}).dumps()
+    )
+    acc1 = result.accounts
     assert isinstance(acc1, set)
     assert len(acc1) == len(expected_set)
     for acc in acc1:
         assert acc in expected_set
-    assert AccountMap.loads(AccountMap(
-        accounts={'a': a1, 'b': a2, 'c': a3}).dumps()).accounts == {
+
+    result = await AccountMap.loads(
+        await AccountMap(accounts={'a': a1, 'b': a2, 'c': a3}).dumps()
+    )
+    assert result.accounts == {
         'a': a1,
         'b': a2,
         'c': a3,
     }
 
 
-def test_submodels_forward_reference():
+@pytest.mark.asyncio
+async def test_submodels_forward_reference():
     a1 = Account(id='123', name='foo', active=True)
     a2 = Account(id='456', name='bar', active=False)
     a3 = Account(id='789', name='baz', active=True)
 
-    assert AccountList.loads(FREFAccountList(
-        accounts=[a1, a2, a3]).dumps()).accounts == [a1, a2, a3]
-    assert sorted(AccountSet.loads(FREFAccountSet(
-        accounts={a1, a2, a3}).dumps()).accounts) == sorted({a1, a2, a3})
-    assert AccountMap.loads(FREFAccountMap(
-        accounts={'a': a1, 'b': a2, 'c': a3}).dumps()).accounts == {
+    result = await AccountList.loads(
+        await FREFAccountList(accounts=[a1, a2, a3]).dumps()
+    )
+    assert result.accounts == [a1, a2, a3]
+
+    result = await AccountSet.loads(
+        await FREFAccountSet(accounts={a1, a2, a3}).dumps()
+    )
+
+    assert sorted(result.accounts) == sorted({a1, a2, a3})
+
+    result = await AccountMap.loads(
+        await FREFAccountMap(accounts={'a': a1, 'b': a2, 'c': a3}).dumps()
+    )
+    assert result.accounts == {
         'a': a1,
         'b': a2,
         'c': a3,
@@ -592,6 +771,7 @@ class test_FieldDescriptor:
         assert User.account.name.getattr(u) == 4
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize('record', [
     Account(id=None, name=None),
     Account(id='123', name='123'),
@@ -604,8 +784,8 @@ class test_FieldDescriptor:
     AccountList(accounts=[Account(id=None, name=None)]),
     AccountMap(accounts={'foo': Account(id=None, name='foo')}),
 ])
-def test_dumps(record):
-    assert record.loads(record.dumps()) == record
+async def test_dumps(record):
+    assert await record.loads(await record.dumps()) == record
     assert repr(record)
 
 
@@ -716,7 +896,8 @@ def test_supports_post_init():
     assert x.z == 4
 
 
-def test_default_no_blessed_key():
+@pytest.mark.asyncio
+async def test_default_no_blessed_key():
 
     class X(Record):
         a: int
@@ -730,12 +911,13 @@ def test_default_no_blessed_key():
     x = LooksLikeX(303)
     y = Y(x)
 
-    data = Y.dumps(y, serializer='json')
-    y2 = Y.loads(data, serializer='json')
+    data = await Y.dumps(y, serializer='json')
+    y2 = await Y.loads(data, serializer='json')
     assert isinstance(y2.x, X)
 
 
-def test_default_multiple_levels_no_blessed_key():
+@pytest.mark.asyncio
+async def test_default_multiple_levels_no_blessed_key():
 
     class StdAttribution(Record):
         first_name: str
@@ -755,12 +937,13 @@ def test_default_multiple_levels_no_blessed_key():
         last_name='Costanza',
         address=Address('US'),
     ))
-    s = event.loads(event.dumps(serializer='json'), serializer='json')
+    s = await event.loads(await event.dumps(serializer='json'), serializer='json')
     assert isinstance(s.account, Account)
     assert isinstance(s.account.address, Address)
 
 
-def test_polymorphic_fields(app):
+@pytest.mark.asyncio
+async def test_polymorphic_fields(app):
 
     class X(Record):
         a: int
@@ -774,12 +957,13 @@ def test_polymorphic_fields(app):
     x = LooksLikeX(303)
     y = Y(x)
 
-    data = Y.dumps(y, serializer='json')
-    y2 = app.serializers.loads_key(Y, data, serializer='json')
+    data = await Y.dumps(y, serializer='json')
+    y2 = await app.serializers.loads_key(Y, data, serializer='json')
     assert isinstance(y2.x, LooksLikeX)
 
 
-def test_compat_enabled_blessed_key(app):
+@pytest.mark.asyncio
+async def test_compat_enabled_blessed_key(app):
 
     class X(Record):
         a: int
@@ -793,12 +977,13 @@ def test_compat_enabled_blessed_key(app):
     x = LooksLikeX(303)
     y = Y(x)
 
-    data = Y.dumps(y, serializer='json')
-    y2 = app.serializers.loads_key(Y, data, serializer='json')
+    data = await Y.dumps(y, serializer='json')
+    y2 = await app.serializers.loads_key(Y, data, serializer='json')
     assert isinstance(y2.x, LooksLikeX)
 
 
-def test__polymorphic_fields_deeply_nested():
+@pytest.mark.asyncio
+async def test__polymorphic_fields_deeply_nested():
 
     class BaseAttribution(Record, abc.ABC):
 
@@ -821,7 +1006,7 @@ def test__polymorphic_fields_deeply_nested():
         event='bar',
         data=AdjustData('baz'),
     ))
-    value = x.dumps(serializer='json')
+    value = await x.dumps(serializer='json')
     value_dict = json.loads(value)
     value_dict['event']['__faust']['ns'] = 'x.y.z'
     model = AdjustRecord.from_data(value_dict)
@@ -829,7 +1014,8 @@ def test__polymorphic_fields_deeply_nested():
     assert isinstance(model.event.data, AdjustData)
 
 
-def test_compat_blessed_key_deeply_nested():
+@pytest.mark.asyncio
+async def test_compat_blessed_key_deeply_nested():
 
     class BaseAttribution(Record, abc.ABC):
 
@@ -852,7 +1038,7 @@ def test_compat_blessed_key_deeply_nested():
         event='bar',
         data=AdjustData('baz'),
     ))
-    value = x.dumps(serializer='json')
+    value = await x.dumps(serializer='json')
     value_dict = json.loads(value)
     value_dict['event']['__faust']['ns'] = 'x.y.z'
     model = AdjustRecord.from_data(value_dict)
@@ -1025,7 +1211,8 @@ def test_parse_iso8601(input, expected):
         iso8601.parse, datetime, input) == expected
 
 
-def test_list_field_refers_to_self():
+@pytest.mark.asyncio
+async def test_list_field_refers_to_self():
 
     class X(Record):
         id: int
@@ -1033,15 +1220,16 @@ def test_list_field_refers_to_self():
 
     x = X(1, [X(2, [X(3, [])])])
 
-    as_json = x.dumps(serializer='json')
-    loads = X.loads(as_json, serializer='json')
+    as_json = await x.dumps(serializer='json')
+    loads = await X.loads(as_json, serializer='json')
     assert loads == x
 
     assert isinstance(loads.xs[0], X)
     assert isinstance(loads.xs[0].xs[0], X)
 
 
-def test_optional_modelfield():
+@pytest.mark.asyncio
+async def test_optional_modelfield():
 
     class X(Record):
         id: int
@@ -1051,8 +1239,8 @@ def test_optional_modelfield():
 
     y = Y(X(30))
 
-    as_json = y.dumps(serializer='json')
-    loads = Y.loads(as_json, serializer='json')
+    as_json = await y.dumps(serializer='json')
+    loads = await Y.loads(as_json, serializer='json')
     assert loads == y
 
     assert isinstance(loads.x, X)
@@ -1115,13 +1303,14 @@ def test_maybe_namespace_raises_for_missing_abstract_type():
                            preferred_type=ModelT)
 
 
-def test_compat_loads_DeprecationWarning():
+@pytest.mark.asyncio
+async def test_compat_loads_DeprecationWarning():
     class X(Record):
         foo: str
 
-    payload = X('foo').dumps(serializer='json')
+    payload = await X('foo').dumps(serializer='json')
     with pytest.warns(DeprecationWarning):
-        X.loads(payload, default_serializer='json')
+        await X.loads(payload, default_serializer='json')
 
 
 def test_model_overriding_Options_sets_options():
@@ -1187,7 +1376,8 @@ def test_Record_comparison():
         object() <= X(10)
 
 
-def test_maybe_model():
+@pytest.mark.asyncio
+async def test_maybe_model():
 
     class X(Record):
         x: int
@@ -1198,7 +1388,7 @@ def test_maybe_model():
     assert maybe_model(1.01) == 1.01
 
     x1 = X(10, 20)
-    assert maybe_model(json.loads(x1.dumps(serializer='json'))) == x1
+    assert maybe_model(json.loads(await x1.dumps(serializer='json'))) == x1
 
 
 def test_StringField():

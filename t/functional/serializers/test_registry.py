@@ -1,4 +1,5 @@
 import typing
+import asyncio
 from decimal import Decimal
 
 import faust
@@ -27,10 +28,12 @@ class Account(faust.Record):
     user: User
 
 
+async def get_json(record):
+    return await record.dumps(serializer='json')
+
 # Account1
 USER1 = User('A2', 'George', 'Costanza')
 ACCOUNT1 = Account(id='A1', active=True, user=USER1)
-ACCOUNT1_JSON = ACCOUNT1.dumps(serializer='json')
 
 # Account1 without blessed key
 ACCOUNT1_UNBLESSED = ACCOUNT1.to_representation()
@@ -49,7 +52,6 @@ ACCOUNT1_EXTRA_FIELDS_JSON = json.dumps(ACCOUNT1_EXTRA_FIELDS)
 # Account2
 USER2 = User('B2', 'Elaine', 'Benes')
 ACCOUNT2 = Account(id='B1', active=True, user=USER2)
-ACCOUNT2_JSON = ACCOUNT2.dumps(serializer='json')
 
 # Json data not made by Faust.
 NONFAUST = {
@@ -66,9 +68,9 @@ A_STR_STR = 'the quick brown fox'
 VALUE_TESTS = [
     # ### value_type=None, serializer='json'
     #   autodetects blessed records -> Account
-    Case(ACCOUNT1_JSON, None, 'json', ACCOUNT1),
+    Case(ACCOUNT1, None, 'json', ACCOUNT1),
     Case(ACCOUNT1_EXTRA_FIELDS_JSON, None, 'json', ACCOUNT1),
-    Case(ACCOUNT2_JSON, None, 'json', ACCOUNT2),
+    Case(ACCOUNT2, None, 'json', ACCOUNT2),
 
     #   but unblessed record payload -> mapping
     Case(ACCOUNT1_UNBLESSED_JSON, None, 'json', ACCOUNT1_UNBLESSED),
@@ -104,7 +106,7 @@ VALUE_TESTS = [
 
     # ### value_type=Account, serializer='json'
     #   source Account json -> Account
-    Case(ACCOUNT1_JSON, Account, 'json', ACCOUNT1),
+    Case(ACCOUNT1, Account, 'json', ACCOUNT1),
     Case(ACCOUNT1_EXTRA_FIELDS_JSON, Account, 'json', ACCOUNT1),
 
     # source non blessed json -> Account
@@ -112,67 +114,86 @@ VALUE_TESTS = [
 
     # source blessed User json -> User (!!!)
     # value_type is None so it accepts any type
-    Case(USER1.dumps(serializer='json'), None, 'json', USER1),
+    Case(USER1, None, 'json', USER1),
 
     # key/value=None
     Case(None, None, 'json', None),
 ]
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize('payload,typ,serializer,expected', VALUE_TESTS)
-def test_loads_key(payload, typ, serializer, expected, *, app):
-    assert app.serializers.loads_key(
+async def test_loads_key(payload, typ, serializer, expected, *, app):
+    if isinstance(payload, faust.Record):
+        payload = await get_json(payload)
+
+    assert await app.serializers.loads_key(
         typ, payload, serializer=serializer) == expected
 
 
-def test_loads_key__expected_model_received_None(*, app):
+@pytest.mark.asyncio
+async def test_loads_key__expected_model_received_None(*, app):
     with pytest.raises(KeyDecodeError):
-        app.serializers.loads_key(Account, None, serializer='json')
+        await app.serializers.loads_key(Account, None, serializer='json')
 
 
-def test_loads_key__propagates_MemoryError(*, app):
+@pytest.mark.asyncio
+async def test_loads_key__propagates_MemoryError(*, app):
     app.serializers._loads = Mock(name='_loads')
     app.serializers._loads.side_effect = MemoryError()
     with pytest.raises(MemoryError):
-        app.serializers.loads_key(Account, ACCOUNT1_JSON, serializer='json')
+        await app.serializers.loads_key(
+            Account, await ACCOUNT1.dumps(serializer='json'), serializer='json'
+        )
 
 
-def test_loads_value__propagates_MemoryError(*, app):
+@pytest.mark.asyncio
+async def test_loads_value__propagates_MemoryError(*, app):
     app.serializers._loads = Mock(name='_loads')
     app.serializers._loads.side_effect = MemoryError()
     with pytest.raises(MemoryError):
-        app.serializers.loads_value(Account, ACCOUNT1_JSON, serializer='json')
+        await app.serializers.loads_value(
+            Account, await ACCOUNT1.dumps(serializer='json'), serializer='json'
+        )
 
 
-def test_loads_value__expected_model_received_None(*, app):
+@pytest.mark.asyncio
+async def test_loads_value__expected_model_received_None(*, app):
     with pytest.raises(ValueDecodeError):
-        app.serializers.loads_value(Account, None, serializer='json')
+        await app.serializers.loads_value(Account, None, serializer='json')
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize('payload,typ,serializer,expected', VALUE_TESTS)
-def test_loads_value(payload, typ, serializer, expected, *, app):
-    assert app.serializers.loads_value(
+async def test_loads_value(payload, typ, serializer, expected, *, app):
+    if isinstance(payload, faust.Record):
+        payload = await get_json(payload)
+
+    assert await app.serializers.loads_value(
         typ, payload, serializer=serializer) == expected
 
 
-def test_loads_value_missing_key_raises_error(*, app):
+@pytest.mark.asyncio
+async def test_loads_value_missing_key_raises_error(*, app):
     account = ACCOUNT1.to_representation()
     account.pop('active')
     with pytest.raises(ValueDecodeError):
-        app.serializers.loads_value(
+        await app.serializers.loads_value(
             Account, json.dumps(account), serializer='json')
 
 
-def test_loads_key_missing_key_raises_error(*, app):
+@pytest.mark.asyncio
+async def test_loads_key_missing_key_raises_error(*, app):
     account = ACCOUNT1.to_representation()
     account.pop('active')
     with pytest.raises(KeyDecodeError):
-        app.serializers.loads_key(
+        await app.serializers.loads_key(
             Account, json.dumps(account), serializer='json')
 
 
-def test_dumps_value__bytes(*, app):
-    assert app.serializers.dumps_value(
+@pytest.mark.asyncio
+async def test_dumps_value__bytes(*, app):
+    assert await app.serializers.dumps_value(
         bytes, b'foo', serializer='json') == b'foo'
 
 

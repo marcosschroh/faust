@@ -159,6 +159,8 @@ That's it! To install and use our new extension we do:
 At this point may want to publish this on PyPI to share
 the extension with other Faust users.
 """
+import asyncio
+
 import pickle as _pickle
 
 from base64 import b64decode, b64encode
@@ -219,18 +221,30 @@ class Codec(CodecT):
         # subclasses must implement this method.
         raise NotImplementedError()
 
-    def dumps(self, obj: Any) -> bytes:
+    async def dumps(self, obj: Any) -> bytes:
         """Encode object ``obj``."""
         # send _dumps to this instance, and all children.
         for node in self.nodes:
-            obj = cast(Codec, node)._dumps(obj)
+            codec = cast(Codec, node)
+
+            if asyncio.iscoroutine(codec._dumps):
+                obj = await codec._dumps(obj)
+            else:
+                obj = codec._dumps(obj)
+
         return obj
 
-    def loads(self, s: bytes) -> Any:
+    async def loads(self, s: bytes) -> Any:
         """Decode object from string."""
         # send _loads to this instance, and all children in reverse order
         for node in reversed(self.nodes):
-            s = cast(Codec, node)._loads(s)
+            codec = cast(Codec, node)
+
+            if asyncio.iscoroutine(codec._loads):
+                s = await codec._loads(s)
+            else:
+                s = codec._loads(s)
+
         return s
 
     def clone(self, *children: CodecT) -> CodecT:
@@ -358,11 +372,11 @@ def get_codec(name_or_codec: CodecArg) -> CodecT:
     return cast(Codec, name_or_codec)
 
 
-def dumps(codec: Optional[CodecArg], obj: Any) -> bytes:
+async def dumps(codec: Optional[CodecArg], obj: Any) -> bytes:
     """Encode object into bytes."""
-    return get_codec(codec).dumps(obj) if codec else obj
+    return await get_codec(codec).dumps(obj) if codec else obj
 
 
-def loads(codec: Optional[CodecArg], s: bytes) -> Any:
+async def loads(codec: Optional[CodecArg], s: bytes) -> Any:
     """Decode object from bytes."""
-    return get_codec(codec).loads(s) if codec else s
+    return await get_codec(codec).loads(s) if codec else s

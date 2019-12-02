@@ -12,31 +12,35 @@ import pytest
 DATA = {'a': 1, 'b': 'string'}
 
 
-def test_interface():
+@pytest.mark.asyncio
+async def test_interface():
     s = Codec()
     with pytest.raises(NotImplementedError):
-        s._loads(b'foo')
+        await s._loads(b'foo')
     with pytest.raises(NotImplementedError):
-        s.dumps(10)
+        await s.dumps(10)
     assert s.__or__(1) is NotImplemented
 
 
+@pytest.mark.asyncio
 @pytest.mark.parametrize('codec', ['json', 'pickle', 'yaml'])
-def test_json_subset(codec: str) -> None:
-    assert loads(codec, dumps(codec, DATA)) == DATA
+async def test_json_subset(codec: str) -> None:
+    assert await loads(codec, await dumps(codec, DATA)) == DATA
 
 
+@pytest.mark.asyncio
 @given(binary())
-def test_binary(input: bytes) -> None:
-    assert loads('binary', dumps('binary', input)) == input
+async def test_binary(input: bytes) -> None:
+    assert await loads('binary', await dumps('binary', input)) == input
 
 
+@pytest.mark.asyncio
 @given(dictionaries(text(), text()))
-def test_combinators(input: Mapping[str, str]) -> None:
+async def test_combinators(input: Mapping[str, str]) -> None:
     s = json() | _binary()
     assert repr(s).replace("u'", "'") == 'json() | binary()'
 
-    d = s.dumps(input)
+    d = await s.dumps(input)
     assert isinstance(d, bytes)
     assert _json.loads(want_str(base64.b64decode(d))) == input
 
@@ -56,7 +60,8 @@ def test_register():
         codecs.pop('mine')
 
 
-def test_raw():
-    bits = get_codec('raw').dumps('foo')
+@pytest.mark.asyncio
+async def test_raw():
+    bits = await get_codec('raw').dumps('foo')
     assert isinstance(bits, bytes)
-    assert get_codec('raw').loads(bits) == b'foo'
+    assert await get_codec('raw').loads(bits) == b'foo'

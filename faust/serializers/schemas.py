@@ -85,19 +85,23 @@ class Schema(SchemaT):
             serializer=serializer or self.value_serializer,
         )
 
-    def dumps_key(self, app: AppT, key: K, *,
-                  serializer: CodecArg = None,
-                  headers: OpenHeadersArg) -> Tuple[Any, OpenHeadersArg]:
-        payload = app.serializers.dumps_key(
+    async def dumps_key(
+        self, app: AppT, key: K, *,
+        serializer: CodecArg = None,
+        headers: OpenHeadersArg
+    ) -> Tuple[Any, OpenHeadersArg]:
+        payload = await app.serializers.dumps_key(
             self.key_type, key,
             serializer=serializer or self.key_serializer,
         )
         return payload, self.on_dumps_key_prepare_headers(key, headers)
 
-    def dumps_value(self, app: AppT, value: V, *,
-                    serializer: CodecArg = None,
-                    headers: OpenHeadersArg) -> Tuple[Any, OpenHeadersArg]:
-        payload = app.serializers.dumps_value(
+    async def dumps_value(
+        self, app: AppT, value: V, *,
+        serializer: CodecArg = None,
+        headers: OpenHeadersArg
+    ) -> Tuple[Any, OpenHeadersArg]:
+        payload = await app.serializers.dumps_value(
             self.value_type, value,
             serializer=serializer or self.value_serializer,
         )
@@ -134,7 +138,7 @@ class Schema(SchemaT):
         async def decode(message: Message, *,
                          propagate: bool = default_propagate) -> Any:
             try:
-                k: K = schema_loads_key(app, message, loads=loads_key)
+                k: K = await schema_loads_key(app, message, loads=loads_key)
             except KeyDecodeError as exc:
                 if propagate:
                     raise
@@ -143,7 +147,9 @@ class Schema(SchemaT):
                 try:
                     if message.value is None and allow_empty:
                         return create_event(k, None, message.headers, message)
-                    v: V = schema_loads_value(app, message, loads=loads_value)
+                    v: V = await schema_loads_value(
+                        app, message, loads=loads_value
+                    )
                 except ValueDecodeError as exc:
                     if propagate:
                         raise

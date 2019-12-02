@@ -133,7 +133,7 @@ class test_Topic:
         topic._get_producer = AsyncMock(return_value=producer)
         callback = Mock(name='callback')
         headers = {'k': 'v'}
-        fm = topic.as_future_message(
+        fm = await topic.as_future_message(
             key='foo',
             value='bar',
             partition=130,
@@ -144,8 +144,9 @@ class test_Topic:
             callback=callback,
         )
         await topic.publish_message(fm, wait=True)
-        key, headers = topic.prepare_key('foo', 'json', None, headers)
-        value, headers = topic.prepare_value('bar', 'json', None, headers)
+        key, headers = await topic.prepare_key('foo', 'json', None, headers)
+        value, headers = await topic.prepare_value(
+            'bar', 'json', None, headers)
         producer.send_and_wait.coro.assert_called_once_with(
             topic.get_topic_name(),
             key,
@@ -337,6 +338,7 @@ class test_Topic:
         topic = topic.derive_topic(value_serializer='json', value_type=Dummy)
         topic.on_value_decode_error = AsyncMock()
         topic._compile_decode()
+        print(topic.__dict__, topic.__class__)
         await topic.decode(message_empty_value, propagate=False)
         topic.on_value_decode_error.assert_called_once()
 

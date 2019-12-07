@@ -75,12 +75,14 @@ class Schema(SchemaT):
             serializer=serializer or self.key_serializer,
         ))
 
-    def loads_value(self, app: AppT, message: Message, *,
-                    loads: Callable = None,
-                    serializer: CodecArg = None) -> VT:
+    async def loads_value(
+        self, app: AppT, message: Message, *,
+        loads: Callable = None,
+        serializer: CodecArg = None
+    ) -> VT:
         if loads is None:
             loads = app.serializers.loads_value
-        return loads(
+        return await loads(
             self.value_type, message.value,
             serializer=serializer or self.value_serializer,
         )

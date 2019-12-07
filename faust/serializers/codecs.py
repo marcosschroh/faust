@@ -227,7 +227,7 @@ class Codec(CodecT):
         for node in self.nodes:
             codec = cast(Codec, node)
 
-            if asyncio.iscoroutine(codec._dumps):
+            if asyncio.iscoroutinefunction(codec._dumps):
                 obj = await codec._dumps(obj)
             else:
                 obj = codec._dumps(obj)
@@ -240,7 +240,7 @@ class Codec(CodecT):
         for node in reversed(self.nodes):
             codec = cast(Codec, node)
 
-            if asyncio.iscoroutine(codec._loads):
+            if asyncio.iscoroutinefunction(codec._loads):
                 s = await codec._loads(s)
             else:
                 s = codec._loads(s)

@@ -1,10 +1,11 @@
 """Client Assignment."""
 import copy
-from typing import List, Mapping, MutableMapping, Sequence, Set, Tuple, cast
+from typing import List, Mapping, MutableMapping, Sequence, Set, Tuple, cast, Any
 from faust.models import Record
 from faust.types import TP
 from faust.types.assignor import HostToPartitionMap
 from faust.types.tables import TableManagerT
+from faust.serializers.codecs import get_codec
 
 R_COPART_ASSIGNMENT = '''
 <{name} actives={self.actives} standbys={self.standbys} topics={self.topics}>
@@ -143,10 +144,11 @@ class ClientAssignment(Record,
         return next(valid_partitions, set())
 
 
-class ClientMetadata(Record,
-                     serializer='json',
-                     include_metadata=False,
-                     namespace='@ClientMetadata'):
+class ClientMetadata(
+    Record,
+    include_metadata=False,
+    namespace='@ClientMetadata'
+):
     """Client Metadata data model."""
 
     assignment: ClientAssignment
@@ -157,3 +159,11 @@ class ClientMetadata(Record,
     def __post_init__(self) -> None:
         if self.topic_groups is None:
             self.topic_groups = {}
+
+    def dumps(self) -> bytes:
+        return get_codec("json")._dumps(self.to_representation())
+
+    @classmethod
+    def loads(cls, s: bytes) -> Any:
+        data = get_codec("json")._loads(s)
+        return cls.from_data(data)

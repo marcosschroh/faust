@@ -382,7 +382,6 @@ class Topic(SerializedChannel, TopicT):
         """Fulfill promise to publish message to topic."""
         app = self.app
         message: PendingMessage = fut.message
-        print(message, "HOla ")
         topic = self._topic_name_or_default(message.channel)
         key: bytes = cast(bytes, message.key)
         value: bytes = cast(bytes, message.value)

@@ -77,11 +77,13 @@ class Registry(RegistryT):
                 return 'raw'
         return serializer
 
-    async def loads_value(self,
-                    typ: Optional[ModelArg],
-                    value: Optional[bytes],
-                    *,
-                    serializer: CodecArg = None) -> Any:
+    async def loads_value(
+        self,
+        typ: Optional[ModelArg],
+        value: Optional[bytes],
+        *,
+        serializer: CodecArg = None
+    ) -> Any:
         """Deserialize value.
 
         Arguments:

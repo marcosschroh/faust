@@ -109,7 +109,7 @@ class PartitionAssignor(AbstractPartitionAssignor, PartitionAssignorT):
             url=str(self._url),
             changelog_distribution=self.changelog_distribution,
             topic_groups=self._topic_groups,
-        ).dumps()
+        )
 
     @property
     def _url(self) -> URL:
@@ -134,7 +134,7 @@ class PartitionAssignor(AbstractPartitionAssignor, PartitionAssignorT):
     def metadata(self, topics: Set[str]) -> ConsumerProtocolMemberMetadata:
         return ConsumerProtocolMemberMetadata(
             self.version, list(topics),
-            self._metadata
+            self._metadata.dumps()
         )
 
     @classmethod

@@ -144,11 +144,9 @@ class ClientAssignment(Record,
         return next(valid_partitions, set())
 
 
-class ClientMetadata(
-    Record,
-    include_metadata=False,
-    namespace='@ClientMetadata'
-):
+class ClientMetadata(Record,
+                     include_metadata=False,
+                     namespace='@ClientMetadata'):
     """Client Metadata data model."""
 
     assignment: ClientAssignment

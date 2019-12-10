@@ -374,9 +374,13 @@ def get_codec(name_or_codec: CodecArg) -> CodecT:
 
 async def dumps(codec: Optional[CodecArg], obj: Any) -> bytes:
     """Encode object into bytes."""
-    return await get_codec(codec).dumps(obj) if codec else obj
+    if codec:
+        return await get_codec(codec).dumps(obj)
+    return obj
 
 
 async def loads(codec: Optional[CodecArg], s: bytes) -> Any:
     """Decode object from bytes."""
-    return await get_codec(codec).loads(s) if codec else s
+    if codec:
+        return await get_codec(codec).loads(s)
+    return s

@@ -338,7 +338,7 @@ class test_Topic:
         topic = topic.derive_topic(value_serializer='json', value_type=Dummy)
         topic.on_value_decode_error = AsyncMock()
         topic._compile_decode()
-        print(topic.__dict__, topic.__class__)
+
         await topic.decode(message_empty_value, propagate=False)
         topic.on_value_decode_error.assert_called_once()
 

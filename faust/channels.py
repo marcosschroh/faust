@@ -635,9 +635,11 @@ class SerializedChannel(Channel):
         if key is not None:
             schema = schema or self.schema
             assert schema is not None
-            return await schema.dumps_key(self.app, key,
-                                    serializer=key_serializer,
-                                    headers=headers)
+            return await schema.dumps_key(
+                self.app, key,
+                serializer=key_serializer,
+                headers=headers
+            )
         return None, headers
 
     async def prepare_value(
@@ -650,12 +652,7 @@ class SerializedChannel(Channel):
         schema = schema or self.schema
         assert schema is not None
 
-        # if asyncio.iscoroutine(schema.dumps_value):
         return await schema.dumps_value(
             self.app, value,
             serializer=value_serializer,
             headers=headers)
-
-        # return schema.dumps_value(self.app, value,
-        #                           serializer=value_serializer,
-        #                           headers=headers)

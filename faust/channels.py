@@ -246,7 +246,8 @@ class Channel(ChannelT):
             key_serializer: CodecArg = None,
             value_serializer: CodecArg = None,
             callback: MessageSentCallback = None,
-            eager_partitioning: bool = False) -> FutureMessage:
+            eager_partitioning: bool = False,
+            on_table_key_change: Callable = None) -> FutureMessage:
         """Create promise that message will be transmitted."""
         open_headers = self.prepare_headers(headers)
         final_key, open_headers = await self.prepare_key(
@@ -257,6 +258,10 @@ class Channel(ChannelT):
             # Note: raises NotImplementedError if used on unnamed channel.
             partition = self.app.producer.key_partition(
                 self.get_topic_name(), final_key).partition
+
+        if on_table_key_change:
+            on_table_key_change(key, partition)
+
         return FutureMessage(
             PendingMessage(
                 self,

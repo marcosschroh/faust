@@ -937,7 +937,8 @@ async def test_default_multiple_levels_no_blessed_key():
         last_name='Costanza',
         address=Address('US'),
     ))
-    s = await event.loads(await event.dumps(serializer='json'), serializer='json')
+    s = await event.loads(
+        await event.dumps(serializer='json'), serializer='json')
     assert isinstance(s.account, Account)
     assert isinstance(s.account.address, Address)
 

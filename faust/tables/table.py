@@ -3,6 +3,8 @@ from typing import Any, ClassVar, Type
 
 from mode import Seconds
 
+from functools import partial
+
 from faust import windows
 from faust.types.tables import KT, TableT, VT, WindowWrapperT
 from faust.types.windows import WindowT
@@ -69,21 +71,25 @@ class Table(TableT[KT, VT], Collection):
 
     def on_key_set(self, key: KT, value: VT) -> None:
         """Call when the value for a key in this table is set."""
-        fut = self.send_changelog(self.partition_for_key(key), key, value)
-        # partition may be None, in which case the finalized partition
-        # is in fut.partition
-        partition = fut.message.partition
-        assert partition is not None
-        self._maybe_set_key_ttl(key, partition)
+        self.send_changelog(
+            self.partition_for_key(key),
+            key,
+            value,
+            on_table_key_change=partial(self._maybe_set_key_ttl)
+        )
+
         self._sensor_on_set(self, key, value)
 
     def on_key_del(self, key: KT) -> None:
         """Call when a key in this table is removed."""
-        fut = self.send_changelog(self.partition_for_key(key), key, value=None,
-                                  value_serializer='raw')
-        partition = fut.message.partition
-        assert partition is not None
-        self._maybe_del_key_ttl(key, partition)
+        self.send_changelog(
+            self.partition_for_key(key),
+            key,
+            value=None,
+            value_serializer='raw',
+            on_table_key_change=partial(self._maybe_set_key_ttl)
+        )
+
         self._sensor_on_del(self, key)
 
     def as_ansitable(self, title: str = '{table.name}',

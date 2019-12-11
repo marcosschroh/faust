@@ -1,6 +1,16 @@
 """Client Assignment."""
 import copy
-from typing import List, Mapping, MutableMapping, Sequence, Set, Tuple, cast, Any
+from typing import (
+    List,
+    Mapping,
+    MutableMapping,
+    Sequence,
+    Set,
+    Tuple,
+    cast,
+    Any
+)
+
 from faust.models import Record
 from faust.types import TP
 from faust.types.assignor import HostToPartitionMap

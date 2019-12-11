@@ -127,6 +127,7 @@ class test_Collection:
             value_serializer='json',
             callback=table._on_changelog_sent,
             eager_partitioning=True,
+            on_table_key_change=None
         )
 
     def test_send_changelog__custom_serializers(self, *, table):
@@ -135,7 +136,7 @@ class test_Collection:
         table._send_changelog(
             event, 'k', 'v',
             key_serializer='raw',
-            value_serializer='raw',
+            value_serializer='raw'
         )
         table.changelog_topic.send_soon.assert_called_once_with(
             key='k',
@@ -145,6 +146,7 @@ class test_Collection:
             value_serializer='raw',
             callback=table._on_changelog_sent,
             eager_partitioning=True,
+            on_table_key_change=None
         )
 
     def test_send_changelog__no_current_event(self, *, table):

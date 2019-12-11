@@ -79,18 +79,22 @@ class test_Topic:
 
         assert payload == app.serializers.loads_key.return_value
 
-    def test_schema_loads_value__loads_arg_optional(self, *, app):
+    @pytest.mark.asyncio
+    async def test_schema_loads_value__loads_arg_optional(self, *, app):
+        app.serializers.loads_value = AsyncMock(
+            name="loads_value"
+        )
+
         topic = app.topic('foo', value_type='str', value_serializer='msgpack')
-        app.serializers.loads_value = Mock(name='loads_value')
 
         message = Mock(name='message')
-        payload = topic.schema.loads_value(app, message)
+        payload = await topic.schema.loads_value(app, message)
 
         app.serializers.loads_value.assert_called_once_with(
             'str', message.value, serializer='msgpack',
         )
 
-        assert payload == app.serializers.loads_value.return_value
+        assert payload == app.serializers.loads_value.coro.return_value
 
     def test_schema__overriding(self, *, app):
         schema = faust.Schema(
@@ -278,6 +282,7 @@ class test_Topic:
             value_serializer='vser',
             callback=callback,
             eager_partitioning=False,
+            on_table_key_change=None
         )
         assert fut is topic.as_future_message.return_value
 

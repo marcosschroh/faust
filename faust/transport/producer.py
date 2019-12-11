@@ -92,7 +92,8 @@ class ProducerBuffer(Service):
         get_pending = self.pending.get
         send_pending = self._send_pending
         while not self.should_stop:
-            msg = await get_pending()
+            awaitable_msg = await get_pending()
+            msg = await awaitable_msg
             await send_pending(msg)
 
     @property

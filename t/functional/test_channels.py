@@ -250,7 +250,9 @@ async def test_as_future_message__eager_partitioning(*, app):
 
 
 @pytest.mark.asyncio
-async def test_as_future_message__eager_partitioning_on_channel(*, channel, app):
+async def test_as_future_message__eager_partitioning_on_channel(
+    *, channel, app
+):
     app.producer = Mock(name='producer')
     with pytest.raises(NotImplementedError):
         await channel.as_future_message(

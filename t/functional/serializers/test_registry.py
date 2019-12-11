@@ -1,5 +1,5 @@
 import typing
-import asyncio
+
 from decimal import Decimal
 
 import faust

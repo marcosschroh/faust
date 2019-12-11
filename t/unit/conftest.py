@@ -5,6 +5,8 @@ from faust.transport.producer import Producer
 from faust.utils.tracing import set_current_span
 from mode.utils.mocks import AsyncMock, Mock
 
+from faust.types import FutureMessage, PendingMessage
+
 
 @pytest.fixture()
 def app(event_loop, request):
@@ -32,3 +34,25 @@ def app(event_loop, request):
 @pytest.fixture()
 def web(app):
     return app.web
+
+
+@pytest.fixture()
+def future_message():
+    def future(topic):
+        callback = Mock(name='callback')
+        headers = {'k': 'v'}
+        return FutureMessage(
+            PendingMessage(
+                topic,
+                key='foo',
+                value='bar',
+                partition=130,
+                timestamp=312.5134,
+                headers=headers,
+                key_serializer='json',
+                value_serializer='json',
+                callback=callback,
+            )
+        )
+
+    return future
